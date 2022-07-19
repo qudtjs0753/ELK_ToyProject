@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: application-service
+spec:
+  type: NodePort
+  selector:
+    elk_toyproject: application
+    tier: backend
+  ports:
+    - port: 8080
+      nodePort: 30000
+      targetPort: 8080
+      protocol: TCP
+#metadata:
+#  name: application
+#  labels:
+#    elk_toyproject: application
+#spec:
+#  type: NodePort
+#  ports:
+#    - port: 8080
+#      targetPort: 8080
+#  selector:
+#    elk_toyproject: application
+#    tier: frontend

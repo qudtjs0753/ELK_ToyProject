@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: application-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      elk_toyproject: application
+      tier: backend
+  template:
+    metadata:
+      labels:
+        elk_toyproject: application
+        tier: backend
+    spec:
+      containers:
+        - name: application
+          image: elk/application
+          ports:
+            - containerPort: 8080
+          imagePullPolicy: Never
+      restartPolicy: Always
