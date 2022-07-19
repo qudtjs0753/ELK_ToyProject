@@ -110,13 +110,23 @@ services:
       context: application/
     volumes:
       - application:/usr/share/application:rw,Z
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     networks:
       - elk
     depends_on:
+      - nginx
       - filebeat
-
+  nginx:
+    build:
+      context: nginx/
+    volumes:
+      - ./nginx/static:/usr/share/nginx/html
+      - ./nginx/conf:/etc/nginx/
+    ports:
+      - "80:80"
+    networks:
+      - elk
 networks:
   elk:
     driver: bridge
