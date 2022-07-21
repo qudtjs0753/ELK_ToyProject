@@ -97,6 +97,7 @@ services:
       - ./filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:rw,Z
       - filebeat:/usr/share/filebeat
       - application:/usr/share/application:rw,Z
+      - nginxLog:/var/log/nginx:rw,Z
     environment:
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
       LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
@@ -121,6 +122,8 @@ services:
     build:
       context: nginx/
     volumes:
+      - nginx:/usr/share/nginx:rw,Z
+      - nginxLog:/var/log/nginx:rw,Z
       - ./nginx/static:/usr/share/nginx/html
       - ./nginx/conf:/etc/nginx/
     ports:
@@ -136,3 +139,5 @@ volumes:
   elasticsearch:
   application:
   filebeat:
+  nginx:
+  nginxLog:
