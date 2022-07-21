@@ -13,6 +13,29 @@ filebeat.inputs:
         pattern: '^\[\d+:\d+:\d+[/]\d+[.]\d+[:]'
         negate: true
         match: after
+  processors:
+    - add_tags:
+        tags: [app_log]
+        target: "tag_type"
+
+- type: filestream
+  enabled: true
+  paths:
+    - /var/log/nginx/*.log
+  parsers:
+    - ndjson:
+        keys_under_root: true
+        overwrite_keys: true
+        message_key: log
+    - multiline:
+        type: pattern
+        pattern: '^\[\d+:\d+:\d+[/]\d+[.]\d+[:]'
+        negate: true
+        match: after
+  processors:
+    - add_tags:
+        tags: [ nginx_log ]
+        target: "tag_type"
 
   # state options
   # file handler의 timeout 설정.
