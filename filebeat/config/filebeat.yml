@@ -15,8 +15,8 @@ filebeat.inputs:
         match: after
   processors:
     - add_tags:
-        tags: [app_log]
-        target: "tag_type"
+        tags: [ app_log ]
+        target: "log_type"
 
 - type: filestream
   enabled: true
@@ -35,7 +35,7 @@ filebeat.inputs:
   processors:
     - add_tags:
         tags: [ nginx_log ]
-        target: "tag_type"
+        target: "log_type"
 
   # state options
   # file handler의 timeout 설정.
