@@ -21,7 +21,8 @@ filebeat.inputs:
 - type: filestream
   enabled: true
   paths:
-    - /var/log/nginx/*.log
+    - /usr/share/nginx/application/access/*.log
+    - /usr/share/nginx/application/error/*.log
   parsers:
     - ndjson:
         keys_under_root: true
