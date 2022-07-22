@@ -118,6 +118,8 @@ services:
     depends_on:
       - nginx
       - filebeat
+    environment:
+      TZ: Asia/Seoul
   nginx:
     build:
       context: nginx/
@@ -129,6 +131,8 @@ services:
       - "80:80"
     networks:
       - elk
+    environment:
+      TZ: Asia/Seoul
 networks:
   elk:
     driver: bridge
