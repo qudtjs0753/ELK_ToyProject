@@ -116,7 +116,6 @@ services:
     networks:
       - elk
     depends_on:
-      - nginx
       - filebeat
     environment:
       TZ: Asia/Seoul
@@ -131,6 +130,8 @@ services:
       - "80:80"
     networks:
       - elk
+    depends_on:
+      - application
     environment:
       TZ: Asia/Seoul
 networks:
