@@ -1,5 +1,3 @@
-ARG LOGSTASH_FILEBEAT_VERSION
-
 # https://www.docker.elastic.co/
 FROM opensearchproject/logstash-oss-with-opensearch-output-plugin:latest
 
