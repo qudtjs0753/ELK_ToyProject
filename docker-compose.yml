@@ -1,57 +1,57 @@
-version: '3.7'
-
+version: '3'
 services:
-
-  # The 'setup' service runs a one-off script which initializes the
-  # 'logstash_internal' and 'kibana_system' users inside Elasticsearch with the
-  # values of the passwords defined in the '.env' file.
-  #
-  # This task is only performed during the *initial* startup of the stack. On all
-  # subsequent runs, the service simply returns immediately, without performing
-  # any modification to existing users.
-  setup:
+  opensearch-node:
+    restart: always
     build:
-      context: setup/
-      args:
-        ELASTIC_SEARCH_KIBANA_VERSION: ${ELASTIC_SEARCH_KIBANA_VERSION}
-    init: true
-    volumes:
-      - setup:/state:Z
+      context: ./opensearch
+    container_name: opensearch-node
     environment:
-      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
-      LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
-      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
-    networks:
-      - elk
-
-  elasticsearch:
-    build:
-      context: elasticsearch/
-      args:
-        ELASTIC_SEARCH_KIBANA_VERSION: ${ELASTIC_SEARCH_KIBANA_VERSION}
-    volumes:
-      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,z
-      - elasticsearch:/usr/share/elasticsearch/data:z
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    environment:
-      ES_JAVA_OPTS: -Xmx2g -Xms2g
-      # Bootstrap password.
-      # Used to initialize the keystore during the initial startup of
-      # Elasticsearch. Ignored on subsequent runs.
-      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
-      # Use single node discovery in order to disable production mode and avoid bootstrap checks.
-      # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+      cluster.name: opensearch-cluster
+      node.name: opensearch-node
+      discovery.seed_hosts: opensearch-node
+      # cluster.initial_master_nodes: opensearch-node
+      bootstrap.memory_lock: "true" # along with the memlock settings below, disables swapping
+      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      DISABLE_SECURITY_PLUGIN: "true"
       discovery.type: single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+        hard: 65536
+    volumes:
+      - opensearch-data1:/usr/share/opensearch/data
+      # - ./opensearch/opensearch-node1/config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro,Z
+    ports:
+      - 9200:9200
+      - 9600:9600 # required for Performance Analyzer
     networks:
-      - elk
-
+      - opensearch-net
+  opensearch-dashboards:
+    restart: always
+    build:
+      context: ./opensearch-dashboards
+    container_name: opensearch-dashboards
+    ports:
+      - 5601:5601
+    expose:
+      - "5601"
+    environment:
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      OPENSEARCH_HOSTS: '["http://opensearch-node:9200"]'
+    # volumes:
+    #   - ./opensearch-dashboards/config/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml:ro,Z
+    networks:
+      - opensearch-net
+    depends_on:
+      - opensearch-node
   logstash:
     build:
       context: logstash/
-      args:
-        LOGSTASH_FILEBEAT_VERSION: ${LOGSTASH_FILEBEAT_VERSION}
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
       - ./logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
@@ -62,35 +62,14 @@ services:
       LS_JAVA_OPTS: -Xmx1g -Xms1g
       LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
     networks:
-      - elk
+      - opensearch-net
     depends_on:
-      - elasticsearch
-
-  kibana:
-    build:
-      context: kibana/
-      args:
-        ELASTIC_SEARCH_KIBANA_VERSION: ${ELASTIC_SEARCH_KIBANA_VERSION}
-    volumes:
-    # Z: 다른 container에 공유한다는 옵션
-    # ro : read-only
-    # rw : read-write
-    # WSL 가서 보면 있습니다.
-      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
-    ports:
-      - "5601:5601"
-    environment:
-      NODE_OPTIONS: "--max-old-space-size=2048"
-      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
-    networks:
-      - elk
-    depends_on:
-      - elasticsearch
+      - opensearch-node
   filebeat:
     build:
       context: filebeat/
       args:
-        LOGSTASH_FILEBEAT_VERSION: ${LOGSTASH_FILEBEAT_VERSION}
+        FILEBEAT_VERSION: ${FILEBEAT_VERSION}
     # windows DACL
     entrypoint: "filebeat -e -strict.perms=false"
     volumes:
@@ -103,7 +82,7 @@ services:
       LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
       KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
     networks: 
-      - elk
+      - opensearch-net
     depends_on:
       - logstash
   application:
@@ -114,7 +93,7 @@ services:
     expose:
       - "8080"
     networks:
-      - elk
+      - opensearch-net
     depends_on:
       - filebeat
     environment:
@@ -129,18 +108,16 @@ services:
     ports:
       - "80:80"
     networks:
-      - elk
+      - opensearch-net
     depends_on:
       - application
     environment:
       TZ: Asia/Seoul
-networks:
-  elk:
-    driver: bridge
-
 volumes:
-  setup:
-  elasticsearch:
+  opensearch-data1:
   application:
   filebeat:
   nginx:
+
+networks:
+  opensearch-net:

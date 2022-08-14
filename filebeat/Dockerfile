@@ -1,3 +1,3 @@
-ARG LOGSTASH_FILEBEAT_VERSION
+ARG FILEBEAT_VERSION
 
-FROM docker.elastic.co/beats/filebeat:${LOGSTASH_FILEBEAT_VERSION}
+FROM docker.elastic.co/beats/filebeat:${FILEBEAT_VERSION}

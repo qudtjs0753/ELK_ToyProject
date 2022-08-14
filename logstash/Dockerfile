@@ -1,7 +1,5 @@
-ARG LOGSTASH_FILEBEAT_VERSION
-
 # https://www.docker.elastic.co/
-FROM docker.elastic.co/logstash/logstash:${LOGSTASH_FILEBEAT_VERSION}
+FROM opensearchproject/logstash-oss-with-opensearch-output-plugin:latest
 
 # Add your logstash plugins setup here
 # Example: RUN logstash-plugin install logstash-filter-json
